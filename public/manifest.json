@@ -1,0 +1,17 @@
+{
+  "name": "WebSocket Test App",
+  "short_name": "WsApp",
+  "version": "0.1",
+  "manifest_version": "2",
+  "start_url": "/ws-test-app/",
+  "icons": [
+    {
+      "src": "/ws-test-app/logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "theme_color": "#000",
+  "background_color": "#fff",
+  "display": "standalone"
+}

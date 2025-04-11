@@ -15,7 +15,7 @@ type TResponse = {
   error?: unknown;
 };
 
-const MANUAL_CLOSE = 'MANUAL_CLOSE';
+// const MANUAL_CLOSE = 'MANUAL_CLOSE';
 
 function getEventData(event: MessageEvent): TResponse | null {
   try {
@@ -50,6 +50,7 @@ function sendMessage(socket: WebSocket, method: TSendMethod, payload: object) {
 
 export class Socket {
   private _socket: WebSocket | null = null;
+  private _reconnect: boolean = false;
   private _controller: AbortController | null = null;
   private _subs: TSubsMap = new Map();
 
@@ -66,10 +67,7 @@ export class Socket {
 
   private _onConnectionClose = (event: CloseEvent) => {
     log(`Closed ${event.code} ${event.reason}`, 'red');
-
-    if (event.reason !== MANUAL_CLOSE) {
-      setTimeout(() => this.connect(), 1000);
-    }
+    this._reconnect && setTimeout(() => this.connect(), 1000);
   };
 
   private _onVisibilityChange = () => {
@@ -83,6 +81,8 @@ export class Socket {
 
   connect = (): void => {
     log('Connect', 'green');
+
+    this._reconnect = true;
     // this._socket?.close(1000, MANUAL_CLOSE);
 
     this._socket = new WebSocket(this._url);
@@ -116,11 +116,13 @@ export class Socket {
   };
 
   close = (): void => {
-    if (!this._socket) return;
     log('Close');
 
+    this._reconnect = false;
+    if (!this._socket) return;
+
     if (this._socket.readyState !== WebSocket.CLOSED) {
-      this._socket.close(1000, MANUAL_CLOSE);
+      this._socket.close(1000);
     }
 
     this._controller?.abort();

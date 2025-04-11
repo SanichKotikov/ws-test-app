@@ -65,7 +65,7 @@ export class Socket {
   };
 
   private _onConnectionClose = (event: CloseEvent) => {
-    log(`Closed: ${event.reason}`, 'red');
+    log(`Closed ${event.code} ${event.reason}`, 'red');
 
     if (event.reason !== MANUAL_CLOSE) {
       setTimeout(() => this.connect(), 1000);
@@ -73,7 +73,7 @@ export class Socket {
   };
 
   private _onVisibilityChange = () => {
-    log(document.visibilityState);
+    log(`${document.visibilityState}, ${this._socket?.readyState}`);
     if (document.visibilityState !== 'visible') return;
     if (!this._socket || this._socket.readyState === WebSocket.OPEN) return;
 

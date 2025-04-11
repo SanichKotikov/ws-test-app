@@ -77,8 +77,8 @@ export class Socket {
     if (document.visibilityState !== 'visible') return;
     if (!this._socket || this._socket.readyState === WebSocket.OPEN) return;
 
-    log('Force connect!');
-    this.connect();
+    log('Force connect?');
+    // this.connect();
   };
 
   connect = (): void => {

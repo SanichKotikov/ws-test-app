@@ -83,7 +83,7 @@ export class Socket {
 
   connect = (): void => {
     log('Connect', 'green');
-    this._socket?.close(1000, MANUAL_CLOSE);
+    // this._socket?.close(1000, MANUAL_CLOSE);
 
     this._socket = new WebSocket(this._url);
     this._socket.onmessage = this._onReceiveMessage;

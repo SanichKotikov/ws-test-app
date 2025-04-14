@@ -15,8 +15,6 @@ type TResponse = {
   error?: unknown;
 };
 
-// const MANUAL_CLOSE = 'MANUAL_CLOSE';
-
 function getEventData(event: MessageEvent): TResponse | null {
   try {
     return JSON.parse(event.data);
@@ -50,11 +48,11 @@ function sendMessage(socket: WebSocket, method: TSendMethod, payload: object) {
 
 export class Socket {
   private _socket: WebSocket | null = null;
-  private _reconnect: boolean = false;
-  private _controller: AbortController | null = null;
+  private _reconnect = false;
+  private _reconnectTimer: ReturnType<typeof setTimeout>;
   private _subs: TSubsMap = new Map();
 
-  constructor(private _url: string) {}
+  constructor(private _url: string, private _token?: string) {}
 
   private _onReceiveMessage = (event: MessageEvent) => {
     const data = getEventData(event);
@@ -65,38 +63,29 @@ export class Socket {
     });
   };
 
-  private _onConnectionClose = (event: CloseEvent) => {
-    log(`Closed ${event.code} ${event.reason}`, 'red');
-    this._reconnect && setTimeout(() => this.connect(), 1000);
+  private _onConnectionClose = () => {
+    log('[WS]: on close');
+    this._reconnectTimer = setTimeout(() => {
+      log(`[WS]: on timer: ${!!this._socket} ${!!this._reconnect}`);
+      this._reconnect && this.connect();
+    }, 1000);
   };
 
-  private _onVisibilityChange = () => {
-    log(`${document.visibilityState}, ${this._socket?.readyState}`);
-    if (document.visibilityState !== 'visible') return;
-    if (!this._socket || this._socket.readyState === WebSocket.OPEN) return;
-
-    log('Force connect?');
-    // this.connect();
+  private _onConnectionError = () => {
+    log('[WS]: on error', 'red');
+    this._socket = null;
   };
 
   connect = (): void => {
-    log('Connect', 'green');
+    log(`[WS]: try connect: ${!!this._socket}`);
+    if (this._socket) return;
 
+    log('[WS]: connecting', 'green');
     this._reconnect = true;
-    // this._socket?.close(1000, MANUAL_CLOSE);
-
-    this._socket = new WebSocket(this._url);
+    this._socket = new WebSocket(this._url, this._token);
     this._socket.onmessage = this._onReceiveMessage;
     this._socket.onclose = this._onConnectionClose;
-    this._socket.onerror = () => log('Socket error!', 'red');
-
-    if (!this._controller) {
-      this._controller = new AbortController();
-
-      document.addEventListener('visibilitychange', this._onVisibilityChange, {
-        signal: this._controller.signal,
-      });
-    }
+    this._socket.onerror = this._onConnectionError;
   };
 
   subscribe = (method: TReceiveMethod, callback: TCallback): VoidFunction => {
@@ -109,24 +98,19 @@ export class Socket {
   };
 
   post = (method: TSendMethod, payload: object): Promise<object | undefined> => {
-    log('Post');
+    log('[WS]: Post');
     return this._socket?.readyState === WebSocket.OPEN
       ? sendMessage(this._socket, method, payload)
       : Promise.reject(new Error('No connection'));
   };
 
   close = (): void => {
-    log('Close');
-
+    log('[WS]: close');
     this._reconnect = false;
+    clearTimeout(this._reconnectTimer);
     if (!this._socket) return;
 
-    if (this._socket.readyState !== WebSocket.CLOSED) {
-      this._socket.close(1000);
-    }
-
-    this._controller?.abort();
-    this._controller = null;
+    this._socket.close(1000);
     this._socket = null;
   };
 }

@@ -63,8 +63,10 @@ export class Socket {
     });
   };
 
-  private _onConnectionClose = () => {
-    log('[WS]: on close');
+  private _onConnectionClose = (event: CloseEvent) => {
+    log(`[WS]: on close: ${event.code} ${event.reason}`);
+    this._socket = null;
+
     this._reconnectTimer = setTimeout(() => {
       log(`[WS]: on timer: ${!!this._socket} ${!!this._reconnect}`);
       this._reconnect && this.connect();
@@ -77,9 +79,6 @@ export class Socket {
   };
 
   connect = (): void => {
-    log(`[WS]: try connect: ${!!this._socket}`);
-    if (this._socket) return;
-
     log('[WS]: connecting', 'green');
     this._reconnect = true;
     this._socket = new WebSocket(this._url, this._token);
@@ -110,6 +109,7 @@ export class Socket {
     clearTimeout(this._reconnectTimer);
     if (!this._socket) return;
 
+    this._socket.onclose = null;
     this._socket.close(1000);
     this._socket = null;
   };

@@ -78,6 +78,11 @@ export class Socket {
     this._socket = null;
   };
 
+  get connected(): boolean {
+    log(`[WS]: get connected ${this._socket?.readyState}`);
+    return this._socket?.readyState === WebSocket.OPEN;
+  }
+
   connect = (): void => {
     log('[WS]: connecting', 'green');
     this._reconnect = true;

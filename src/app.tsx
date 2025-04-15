@@ -1,4 +1,4 @@
-import { type Component, For } from 'solid-js';
+import { type Component, For, onCleanup, onMount } from 'solid-js';
 import { type TColor, logs, log } from './logger';
 import { Socket } from './socket';
 
@@ -16,6 +16,19 @@ function formatTime(time: number): string {
 
 export const App: Component = () => {
   const socket = new Socket('wss://echo.websocket.org');
+
+  onMount(() => {
+    const handler = () => {
+      if (document.hidden) return;
+      log(`[CB]: connected ${socket.connected}`);
+    };
+
+    document.addEventListener('visibilitychange', handler);
+
+    onCleanup(() => {
+      document.removeEventListener('visibilitychange', handler);
+    });
+  });
 
   const post = () => {
     socket.post('send_time', { time: Date.now() })

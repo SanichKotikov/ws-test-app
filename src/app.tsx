@@ -20,7 +20,7 @@ export const App: Component = () => {
   onMount(() => {
     const handler = () => {
       if (document.hidden) return;
-      log(`[CB]: connected ${socket.connected}`);
+      setTimeout(() => log(`[CB]: connected ${socket.connected}`), 100);
     };
 
     document.addEventListener('visibilitychange', handler);
